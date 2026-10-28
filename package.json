@@ -1,0 +1,9 @@
+{
+  "name": "restaurant-digital-menu",
+  "version": "1.0.0",
+  "description": "منصة منيو رقمي لمطعم: منيو للعميل + داشبورد إدارة",
+  "scripts": {
+    "start": "npx live-server --port=5500 --open=/"
+  },
+  "license": "MIT"
+}
