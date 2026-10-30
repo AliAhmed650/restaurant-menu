@@ -356,6 +356,15 @@ footer.f{display:block;margin-top:56px;padding:0;border:0;background:none}
   .prow .acts2{justify-content:flex-start}
   .prow .pw{max-width:140px}
 }
+.pm{display:grid;gap:8px}.pm label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--card);cursor:pointer}.pm label.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--card))}.pm input{accent-color:var(--accent)}.pm small{color:var(--mute);display:block}
+.paybox{background:var(--card2);border-radius:14px;padding:14px;display:grid;gap:10px}
+.copyrow{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.stepsl{margin:0;padding-inline-start:20px;display:grid;gap:4px;color:var(--mute);font-size:14px}
+.rcpt{border:1px dashed var(--line);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center;cursor:pointer;background:var(--card)}
+.rcpt img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+.kv{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--mute)}
+.simbox textarea{min-height:90px}
+.bigimg{max-width:100%;max-height:70vh;display:block;margin:auto;border-radius:12px}
 </style>
 
 <div id="app"></div>
@@ -363,6 +372,7 @@ footer.f{display:block;margin-top:56px;padding:0;border:0;background:none}
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="config.js" onerror="void 0"></script>
 <script>
 (function(){
 'use strict';
@@ -404,6 +414,7 @@ cart:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="
 star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
 drag:'<circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>',
 check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',
+wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14h2"/>',
 copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V4h12"/>',
 shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
 upload:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
@@ -453,7 +464,7 @@ function seed(){
   ];
   orders.forEach(function(o){o.total=o.items.reduce(function(s,i){return s+i.price*i.qty},0)});
   return {v:1,seq:1045,
-    info:{name:{ar:'شاورما الديوان',en:'Al Diwan Shawarma'},tagline:{ar:'شاورما على أصولها منذ ٢٠١٠',en:'Shawarma done properly since 2010'},phone:'0100 000 0000',address:{ar:'وسط البلد، القاهرة',en:'Downtown, Cairo'},hours:{ar:'يوميًا من ١٢ ظهرًا حتى ٢ صباحًا',en:'Daily 12 PM to 2 AM'},open:true},
+    info:{name:{ar:'شاورما الديوان',en:'Al Diwan Shawarma'},tagline:{ar:'شاورما على أصولها منذ ٢٠١٠',en:'Shawarma done properly since 2010'},phone:'0100 000 0000',address:{ar:'وسط البلد، القاهرة',en:'Downtown, Cairo'},hours:{ar:'يوميًا من ١٢ ظهرًا حتى ٢ صباحًا',en:'Daily 12 PM to 2 AM'},open:true,pay:{vodafone:'01064872534',instapay:'',cash:true}},
     theme:{accent:'#c2571a',layout:'grid'},
     cats:cats.map(function(c){return {id:c[0],name:{ar:c[1],en:c[2]}}}),
     products:products,
@@ -464,14 +475,14 @@ function seed(){
       {id:'o3',title:{ar:'وجبة دجاج + بطاطس + مشروب بسعر خاص',en:'Chicken meal + fries + drink bundle'},desc:{ar:'وفّر أكثر مع الوجبة الكاملة.',en:'Save more with the full meal.'},badge:L2('وجبة','Combo'),pid:'p1',active:true},
       {id:'o4',title:{ar:'توصيل مجاني للطلبات فوق ٣٠٠ ج.م',en:'Free delivery over 300 EGP'},desc:{ar:'داخل منطقة وسط البلد.',en:'Within the downtown area.'},badge:L2('توصيل','Delivery'),pid:'',active:true}
     ],
-    orders:orders};
+    orders:orders,payments:[]};
 }
 function L2(a,e){return a}
-function load(){var d=null;try{d=JSON.parse(lsGet(KEY,'null'))}catch(e){}if(!d||!d.products||!d.cats)d=seed();S=d}
-function save(){if(!lsSet(KEY,JSON.stringify(S)))toast(L('تعذر الحفظ: المساحة ممتلئة. جرّب صورة أصغر.','Could not save: storage is full. Try a smaller image.'));try{bc&&bc.postMessage({t:Date.now()})}catch(e){}schedulePush()}
+function load(){var d=null,keep=S;try{d=JSON.parse(lsGet(KEY,'null'))}catch(e){}if(!d||!d.products||!d.cats)d=seed();S=d;S.info.pay=S.info.pay||{vodafone:'',instapay:'',cash:true};S.payments=S.payments||[];S.orders=S.orders||[];if(REMOTE){S.orders=keep&&keep.orders||[];S.payments=[]}}
+function save(){if(!lsSet(KEY,JSON.stringify(REMOTE?Object.assign({},S,{orders:[],payments:[]}):S)))toast(L('تعذر الحفظ: المساحة ممتلئة. جرّب صورة أصغر.','Could not save: storage is full. Try a smaller image.'));try{bc&&bc.postMessage({t:Date.now()})}catch(e){}schedulePush();remotePush()}
 function prod(id){return S.products.filter(function(p){return p.id===id})[0]}
 function cat(id){return S.cats.filter(function(c){return c.id===id})[0]}
-function pendingCount(){return S.orders.filter(function(o){return o.status==='pending'}).length}
+function pendingCount(){return S.orders.filter(function(o){return ['pending','new','review','paid'].indexOf(o.status)>-1}).length}
 var PH=[['#f6c98d','#d9833b','#a8501b'],['#e9cf8f','#b9812c','#7a5416'],['#bfd69a','#6f9a4a','#3f6a26'],['#f0a98f','#cc5a3a','#8e3318'],['#e4cf9c','#b59553','#7a5f26'],['#a9d3e6','#4a8fb3','#25607f']];
 var phc={};
 function ph(p){var ci=Math.max(0,S.cats.findIndex(function(c){return c.id===p.cat}));var k=p.emoji+ci;if(phc[k])return phc[k];var c=PH[ci%PH.length];
@@ -484,7 +495,7 @@ var ui={cat:'all',q:'',f:{veg:false,spicy:false,top:false,avail:false},acat:'all
 try{ui.cart=JSON.parse(lsGet('rdm-cart','[]'))||[]}catch(e){}
 try{ui.recent=JSON.parse(lsGet('rdm-recent','[]'))||[]}catch(e){}
 function saveCart(){lsSet('rdm-cart',JSON.stringify(ui.cart))}
-function authed(){return ssGet('rdm-auth')==='1'}
+function authed(){return REMOTE?!!(RS.s&&RS.s.access_token):ssGet('rdm-auth')==='1'}
 
 /* ---------- theme / lang ---------- */
 function applyTheme(){var r=document.documentElement;r.style.setProperty('--accent',S.theme.accent);r.lang=lang;r.dir=lang==='ar'?'rtl':'ltr';document.title=nm(S.info.name)+' | '+L('المنيو','Menu')}
@@ -542,7 +553,7 @@ function renderMenu(){
    '<button class="iconbtn" data-a="dark" aria-label="'+L('الوضع الداكن','Dark mode')+'">'+ic(isDark()?'sun':'moon')+'</button>'+
    '<button class="iconbtn" data-a="cart" aria-label="'+L('السلة','Cart')+'">'+ic('cart')+(cartCount()?'<span class="cnt num">'+cartCount()+'</span>':'')+'</button>'+
    '<a class="iconbtn" href="#admin" aria-label="'+L('لوحة التحكم','Dashboard')+'" title="'+L('لوحة التحكم','Dashboard')+'">'+ic('shield')+'</a></div></header>'+
-  '<section class="hero"><div class="hero-in"><div class="hero-txt"><div class="logo" aria-hidden="true">🌯</div>'+
+  myBanner()+'<section class="hero"><div class="hero-in"><div class="hero-txt"><div class="logo" aria-hidden="true">🌯</div>'+
    '<span class="pill '+(i.open?'ok':'bad')+'">'+(i.open?L('مفتوح الآن','Open now'):L('مغلق حاليًا','Closed'))+'</span><h1>'+esc(nm(i.name))+'</h1><p class="tag">'+esc(nm(i.tagline))+'</p>'+
    '<div class="chipsrow"><span class="pill">'+ic('clock')+esc(nm(i.hours))+'</span><span class="pill">'+ic('phone')+'<span class="num" dir="ltr">'+esc(i.phone)+'</span></span></div>'+
    '<button class="btn acc" data-a="gomenu">'+L('تصفّح المنيو','Browse the menu')+'</button></div>'+
@@ -583,12 +594,14 @@ function drawModal(){
   } else if(m.kind==='form'){
     h='<div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(m.title)+'"><form id="mf" novalidate><div class="hd"><h2>'+esc(m.title)+'</h2><button type="button" class="iconbtn" data-a="close" aria-label="'+L('إغلاق','Close')+'">'+ic('x')+'</button></div><div class="bd">'+formFields(m.fields)+(m.extra||'')+'<p class="err" id="mferr" role="alert"></p></div><div class="ft"><button type="button" class="btn" data-a="close">'+L('إلغاء','Cancel')+'</button><button type="submit" class="btn pri">'+(m.cta||L('حفظ','Save'))+'</button></div></form></div>';
   }
+  else if(m.kind==='pay'){h='<div class="sheet" role="dialog" aria-modal="true" aria-label="'+L('الدفع','Payment')+'">'+payBody()+'</div>'}
+  else if(m.kind==='img'){h='<div class="sheet" role="dialog" aria-modal="true"><div class="hd"><h2>'+L('إيصال التحويل','Transfer receipt')+'</h2><button class="iconbtn" data-a="close" aria-label="'+L('إغلاق','Close')+'">'+ic('x')+'</button></div><div class="bd">'+(m.src?'<img class="bigimg" alt="" src="'+esc(m.src)+'">':'<p class="note">'+L('جاري التحميل…','Loading…')+'</p>')+'</div></div>'}
   modalEl.innerHTML='<div class="scrim" data-scrim="1">'+h+'</div>';
   var f=modalEl.querySelector('input:not([type=checkbox]),textarea,select');if(f&&m.kind==='form'&&!m.noFocus)f.focus();
 }
 function cartBody(){
   var m=ui.modal;
-  if(m.done){var o=S.orders.filter(function(x){return x.id===ui.lastOrder})[0];
+  if(m.done){var o=ui.lastO;
     return '<div class="bd" style="text-align:center;gap:8px;padding:32px 20px"><div style="font-size:48px">✅</div><h2>'+L('وصلنا طلبك','We got your order')+'</h2><p style="margin:0">'+L('رقم الطلب','Order number')+' <b class="num">#'+ui.lastOrder+'</b></p>'+(o?'<p style="margin:0">'+L('الحالة: ','Status: ')+statusPill(o.status)+'</p>':'')+'<button class="btn pri" data-a="close" style="margin-top:12px;align-self:center">'+L('رجوع للمنيو','Back to menu')+'</button></div>'}
   if(!ui.cart.length)return '<div class="bd"><div class="empty">'+L('السلة فاضية. اختار حاجة من المنيو.','Your cart is empty. Pick something from the menu.')+'</div></div>';
   var bad=false;
@@ -598,10 +611,12 @@ function cartBody(){
     '<div style="display:flex;gap:8px;align-items:center"><span class="qty"><button data-a="cq" data-i="'+idx+'" data-d="-1" aria-label="-">'+ic('minus')+'</button><b class="num">'+it.qty+'</b><button data-a="cq" data-i="'+idx+'" data-d="1" aria-label="+">'+ic('plus')+'</button></span><b class="num" style="min-width:70px;text-align:end">'+money(itemPrice(it))+'</b><button class="sbtn bad" data-a="crm" data-i="'+idx+'" aria-label="'+L('حذف','Remove')+'">'+ic('trash')+'</button></div></div>'}).join('');
   return '<div class="bd">'+lines+'<div class="total"><span>'+L('الإجمالي','Total')+'</span><span class="num">'+money(cartTotal())+'</span></div>'+
    '<label class="fld">'+L('الاسم أو رقم الطاولة','Name or table number')+'<input class="in" id="c_name" value="'+esc(m.name||'')+'" data-a-input="cname" autocomplete="name"></label>'+
+   '<label class="fld">'+L('رقم واتساب لتأكيد الطلب (اختياري)','WhatsApp number for order confirmation (optional)')+'<input class="in num" id="c_phone" dir="ltr" inputmode="tel" autocomplete="tel" data-a-input="cphone" value="'+esc(m.phone||'')+'"></label>'+
    '<label class="fld">'+L('ملاحظات (اختياري)','Notes (optional)')+'<textarea class="in" id="c_note" data-a-input="cnote">'+esc(m.note||'')+'</textarea></label>'+
+   '<div><b>'+L('طريقة الدفع','Payment method')+'</b><div class="pm" style="margin-top:8px">'+payMethods().map(function(k){var on=(m.method||payMethods()[0])===k;return '<label class="'+(on?'on':'')+'"><input type="radio" name="pm" data-a="pm" data-id="'+k+'"'+(on?' checked':'')+'><span><b>'+methodLabel(k)+'</b><small>'+methodHint(k)+'</small></span></label>'}).join('')+'</div></div>'+
    (S.info.open?'':'<p class="err">'+L('المطعم مغلق حاليًا ولا يستقبل طلبات.','The restaurant is closed and not taking orders.')+'</p>')+
    '<p class="err" id="cerr" role="alert"></p>'+
-   '<button class="btn pri" data-a="submit"'+((bad||!S.info.open||ui.submitting)?' disabled':'')+'>'+L('تأكيد الطلب','Place order')+'</button></div>';
+   '<button class="btn pri" data-a="submit"'+((bad||!S.info.open||ui.submitting)?' disabled':'')+'>'+((m.method||payMethods()[0])==='cash'?L('تأكيد الطلب','Place order'):L('تأكيد الطلب والمتابعة للدفع','Place order and continue to payment'))+'</button></div>';
 }
 function formFields(fs){
   return fs.map(function(f){
@@ -634,51 +649,416 @@ function addToCart(pid,ex,qty){
   if(f)f.qty=Math.min(20,f.qty+qty);else ui.cart.push(it);
   saveCart();toast(L('تمت الإضافة للسلة','Added to cart'));render();
 }
-function submitOrder(){
+async function submitOrder(){
   if(ui.submitting)return;
-  var m=ui.modal,name=(m.name||'').trim(),err='';
+  var m=ui.modal,name=(m.name||'').trim(),err='',method=m.method||payMethods()[0];
   if(!S.info.open)err=L('المطعم مغلق حاليًا','The restaurant is closed');
   else if(!name)err=L('اكتب اسمك أو رقم الطاولة','Enter your name or table number');
   else if(ui.cart.some(function(i){var p=prod(i.pid);return !p||!p.avail}))err=L('في صنف مش متاح. احذفه وكمّل.','An item is unavailable. Remove it to continue.');
   if(err){var e=$('#cerr');if(e)e.textContent=err;return}
-  var sig=JSON.stringify(ui.cart)+name,last=ui.lastSig;
-  if(last&&last.sig===sig&&Date.now()-last.t<15000){ui.modal={kind:'cart',done:true};drawModal();toast(L('طلبك اتسجّل بالفعل','Your order was already received'));return}
+  var note=(m.note||'').trim(),phone=digits(m.phone||''),sig=JSON.stringify(ui.cart)+name+method,last=ui.lastSig;
+  if(last&&last.sig===sig&&Date.now()-last.t<15000&&method==='cash'){ui.modal={kind:'cart',done:true};drawModal();toast(L('طلبك اتسجّل بالفعل','Your order was already received'));return}
   ui.submitting=true;
   var items=ui.cart.map(function(i){var p=prod(i.pid);return {pid:i.pid,name:p.name,qty:i.qty,price:p.price,extras:i.ex.map(function(id){var x=S.extras.filter(function(y){return y.id===id})[0];return x?{ar:x.name.ar,en:x.name.en,price:x.price}:null}).filter(Boolean)}});
-  var o={id:Number(String(Date.now()).slice(-7)),t:Date.now(),name:name,items:items,total:cartTotal(),status:'pending',note:(m.note||'').trim()};
-  var fin=function(){ui.lastOrder=o.id;ui.lastSig={sig:sig,t:Date.now()};ui.cart=[];saveCart();ui.submitting=false;ui.modal={kind:'cart',done:true};drawModal();render()};
-  if(DB&&USER){
-    sendOrderDb(o).then(fin,function(){ui.submitting=false;keepCartFields();drawModal();var e=$('#cerr');if(e)e.textContent=L('تعذر إرسال الطلب للمطعم. تأكد إنك مسجّل دخول وجرّب تاني.','Could not send the order. Make sure you are signed in and try again.')});
-  }else{S.orders.push(o);save();fin()}
+  var o;
+  try{
+    if(REMOTE){
+      var r=await sbrpc('create_order',{p_name:name,p_items:ui.cart.map(function(i){return {pid:i.pid,qty:i.qty,extras:i.ex}}),p_note:note,p_method:method,p_phone:phone||null});
+      o={id:r.number,rid:r.id,tok:r.token,t:Date.now(),name:name,items:items,total:Number(r.total),status:r.status==='new'?'pending':r.status,note:note,method:method,phone:phone};
+    }else{
+      S.seq=(S.seq||1045)+1;
+      o={id:S.seq,t:Date.now(),name:name,items:items,total:cartTotal(),status:method==='cash'?'pending':'awaiting_payment',note:note,method:method,phone:phone};
+      if(DB&&USER){await sendOrderDb(o)}else{S.orders.push(o);save()}
+    }
+  }catch(e){ui.submitting=false;keepCartFields();drawModal();var e1=$('#cerr');if(e1)e1.textContent=REMOTE?errText(e):L('تعذر إرسال الطلب للمطعم. تأكد إنك مسجّل دخول وجرّب تاني.','Could not send the order. Make sure you are signed in and try again.');return}
+  ui.lastO=o;ui.lastOrder=o.id;ui.lastSig={sig:sig,t:Date.now()};ui.cart=[];saveCart();ui.submitting=false;
+  if(method==='cash'){setMy(null);ui.modal={kind:'cart',done:true};drawModal();render()}
+  else{setMy(o);render();payOpen(o)}
 }
-function statusLabel(s){return {pending:L('قيد الانتظار','Pending'),preparing:L('قيد التحضير','Preparing'),done:L('تم التسليم','Completed'),cancelled:L('ملغي','Cancelled')}[s]||s}
-function statusPill(s){return '<span class="pill '+({pending:'warn',preparing:'acc',done:'ok',cancelled:'bad'}[s]||'')+'">'+statusLabel(s)+'</span>'}
+function statusLabel(s){return {awaiting_payment:L('في انتظار الدفع','Awaiting payment'),review:L('قيد المراجعة','Under review'),paid:L('تم الدفع','Paid'),new:L('جديد','New'),pending:L('قيد الانتظار','Pending'),preparing:L('قيد التحضير','Preparing'),done:L('تم التسليم','Completed'),cancelled:L('ملغي','Cancelled')}[s]||s}
+function statusPill(s){return '<span class="pill '+({awaiting_payment:'warn',review:'acc',paid:'ok',new:'warn',pending:'warn',preparing:'acc',done:'ok',cancelled:'bad'}[s]||'')+'">'+statusLabel(s)+'</span>'}
 
 /* ---------- ADMIN ---------- */
+/* =====================================================================
+   PAYMENTS: customer payment flow, SMS reconciliation (local simulator),
+   Supabase backend (remote mode), hardened admin login
+   ===================================================================== */
+var CFG=window.APP_CONFIG||{},REMOTE=!!(CFG.supabaseUrl&&CFG.supabaseAnonKey),SBU=String(CFG.supabaseUrl||'').replace(/\/+$/,'');
+var RS={s:null},RM={ver:null,empty:false,payments:[],devices:[],sig:'',paid:null},pushRT=null,tickN=0;
+try{RS.s=JSON.parse(ssGet('rdm-sb')||'null')}catch(e){}
+
+function ascii(t){return String(t==null?'':t).replace(/[٠-٩]/g,function(d){return String(d.charCodeAt(0)-0x660)}).replace(/[۰-۹]/g,function(d){return String(d.charCodeAt(0)-0x6F0)})}
+function digits(t){return ascii(t).replace(/\D/g,'')}
+
+/* ---------- SMS parsing (same rules as the Android app) ---------- */
+function parseSms(raw){
+  var t=ascii(raw).replace(/(\d)[,٬](?=\d{3}(?!\d))/g,'$1'),low=t.toLowerCase();
+  var r={provider:'other',amount:null,txn:null,incoming:true};
+  if(/vodafone|فودافون|vf[\s-]?cash/.test(low))r.provider='vodafone_cash';
+  else if(/insta\s*pay|انستا|إنستا|\bipn\b/.test(low))r.provider='instapay';
+  if(/(تم خصم|سحب|you have sent|you sent|debited|withdraw)/i.test(t))r.incoming=false;
+  var m,am=[/(\d{1,7}(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?\s?م|egp|l\.?e\b)/i,/(?:egp|\bl\.?e\b|جنيه)\s*:?\s*(\d{1,7}(?:\.\d{1,2})?)/i,/(?:مبلغ|amount|قيمة)\D{0,14}?(\d{1,7}(?:\.\d{1,2})?)(?!\d)/i];
+  for(var i=0;i<am.length&&r.amount==null;i++){m=t.match(am[i]);if(m&&Number(m[1])>0)r.amount=Number(m[1])}
+  var kw=/(?:رقم\s*(?:ال)?(?:عملي[ةه]|معامل[ةه]|مرجعي?)|(?:ال)?مرجع|عملي[ةه]\s*رقم|transaction\s*(?:id|no\.?|number|#)?|reference(?:\s*(?:no\.?|number|id))?|\bref(?:\.|\s*no\.?|\s*#)?|\btrx\s*(?:id|no)?|\brrn\b|\bid\b)\s*[:#\-]?\s*([A-Za-z0-9]{6,24})/i;
+  m=t.match(kw);
+  if(m&&digits(m[1]).length>=6)r.txn=digits(m[1]);
+  else{var runs=(t.match(/\d{9,20}/g)||[]).filter(function(x){return !(x.length===11&&x.indexOf('01')===0)});
+    runs.sort(function(a,b){return b.length-a.length});if(runs.length)r.txn=runs[0]}
+  return r;
+}
+
+/* ---------- local reconciliation (mirrors supabase/schema.sql) ---------- */
+function amountOk(p,o){return p.amount!=null&&Number(p.amount)+0.01>=Number(o.total)}
+function reconcileLocal(o){
+  if(['awaiting_payment','review'].indexOf(o.status)<0||!o.payRefN)return o.status;
+  var best=null;
+  S.payments.forEach(function(p){
+    if(p.status!=='unmatched'||p.oid)return;
+    if(!(p.provider===o.method||p.provider==='other'))return;
+    if(p.t<o.t-10*60000)return;
+    var hit=p.txn===o.payRefN||(!p.txn&&o.payRefN.length>=8&&digits(p.raw).indexOf(o.payRefN)>-1);
+    if(!hit)return;
+    if(!best||(p.txn===o.payRefN&&best.txn!==o.payRefN)||p.t>best.t)best=p;
+  });
+  if(!best)return o.status;
+  best.oid=o.id;o.payId=best.id;o.paidAmount=best.amount;
+  if(amountOk(best,o)){best.status='matched';o.status='paid';o.paidAt=Date.now();o.paidBy='auto'}
+  else{best.status='mismatch';o.status='review'}
+  return o.status;
+}
+function ingestLocal(raw){
+  var p=parseSms(raw);
+  if(!p.incoming)return {ok:false,why:'outgoing',p:p};
+  if(p.txn&&S.payments.some(function(x){return x.provider===p.provider&&x.txn===p.txn}))return {ok:false,why:'duplicate',p:p};
+  var rec={id:'pm'+uid(),provider:p.provider,txn:p.txn,amount:p.amount,raw:String(raw).slice(0,1000),t:Date.now(),status:'unmatched',oid:null};
+  S.payments.unshift(rec);
+  S.orders.forEach(function(o){if(rec.status==='unmatched')reconcileLocal(o)});
+  save();return {ok:true,p:p,rec:rec};
+}
+
+/* ---------- methods / helpers ---------- */
+function payMethods(){var p=S.info.pay||{},a=[];if(p.vodafone)a.push('vodafone_cash');if(p.instapay)a.push('instapay');if(p.cash!==false)a.push('cash');if(!a.length)a.push('cash');return a}
+function methodLabel(m){return {vodafone_cash:L('فودافون كاش','Vodafone Cash'),instapay:L('إنستاباي','InstaPay'),cash:L('الدفع عند الاستلام','Pay on delivery')}[m]||m}
+function methodHint(m){return {vodafone_cash:L('تحويل على المحفظة وتأكيد تلقائي','Wallet transfer, confirmed automatically'),instapay:L('تحويل إنستاباي وتأكيد تلقائي','InstaPay transfer, confirmed automatically'),cash:L('بتدفع للمندوب أو الكاشير','Pay the courier or cashier')}[m]||''}
+function errText(e){
+  var c=(e&&e.message)||'',M={ref_used:L('رقم العملية ده مستخدم في طلب تاني. راجع الرقم.','This transaction number is already used on another order. Check it.'),bad_ref:L('رقم العملية غير صحيح. انسخه من رسالة التحويل.','Invalid transaction number. Copy it from the transfer message.'),too_many:L('محاولات كتير. كلّم المطعم لتأكيد الدفع.','Too many attempts. Contact the restaurant to confirm payment.'),not_found:L('الطلب غير موجود.','Order not found.'),closed:L('المطعم مغلق حاليًا.','The restaurant is closed.'),unavailable:L('في صنف مش متاح. حدّث السلة.','An item is unavailable. Update your cart.'),method_not_allowed:L('طريقة الدفع دي غير متاحة.','This payment method is unavailable.'),busy:L('الخدمة مشغولة. جرّب بعد دقيقة.','Service busy. Try again in a minute.'),menu_not_ready:L('المنيو لسه متنشرش على السيرفر.','The menu has not been published to the server yet.'),bad_qty:L('كمية غير صحيحة.','Invalid quantity.'),bad_extra:L('إضافة غير متاحة.','An extra is unavailable.'),bad_name:L('الاسم غير صحيح.','Invalid name.')};
+  return M[c]||L('حصلت مشكلة في الاتصال. جرّب تاني.','Connection problem. Please try again.');
+}
+function getMy(){try{return JSON.parse(lsGet('rdm-my','null'))}catch(e){return null}}
+function setMy(o){lsSet('rdm-my',o?JSON.stringify({id:o.id,rid:o.rid||null,tok:o.tok||null,total:o.total,method:o.method,status:o.status}):'')}
+function myBanner(){
+  var my=getMy();if(!my)return '';
+  if(!REMOTE){var lo=S.orders.filter(function(x){return x.id===my.id})[0];if(lo){my.status=lo.status}else return ''}
+  if(['awaiting_payment','review'].indexOf(my.status)<0)return '';
+  return '<section class="sec" style="padding-bottom:0"><button class="btn acc" data-a="paymy" style="width:100%">'+ic('wallet')+L('كمّل دفع طلبك #','Finish paying order #')+my.id+'</button></section>';
+}
+
+/* ---------- Supabase client (plain fetch) ---------- */
+function sbHead(extra){
+  var h={apikey:CFG.supabaseAnonKey,'Content-Type':'application/json'},tok=RS.s&&RS.s.access_token;
+  if(tok)h.Authorization='Bearer '+tok;else if(String(CFG.supabaseAnonKey).indexOf('sb_')!==0)h.Authorization='Bearer '+CFG.supabaseAnonKey;
+  return Object.assign(h,extra||{});
+}
+async function sbf(path,o){
+  o=o||{};
+  var r=await fetch(SBU+path,{method:o.method||'GET',headers:sbHead(o.headers),body:o.body==null?undefined:(typeof o.body==='string'?o.body:JSON.stringify(o.body))});
+  var t=await r.text(),j=null;try{j=t?JSON.parse(t):null}catch(e){}
+  if(!r.ok){var er=new Error((j&&(j.message||j.msg||j.error_description||j.error))||('HTTP '+r.status));er.status=r.status;throw er}
+  return j;
+}
+function sbrpc(fn,args){return sbf('/rest/v1/rpc/'+fn,{method:'POST',body:args})}
+function sbSave(s){RS.s=s;try{s?sessionStorage.setItem('rdm-sb',JSON.stringify(s)):sessionStorage.removeItem('rdm-sb')}catch(e){}}
+async function sbTokenReq(grant,body){
+  var r=await fetch(SBU+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{apikey:CFG.supabaseAnonKey,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var j=await r.json().catch(function(){return null});
+  if(!r.ok||!j||!j.access_token)throw new Error('auth');
+  return {access_token:j.access_token,refresh_token:j.refresh_token,exp:Date.now()+(j.expires_in||3600)*1000};
+}
+async function sbEnsure(){
+  if(!RS.s)throw new Error('auth');
+  if(RS.s.exp-Date.now()>60000)return;
+  try{sbSave(await sbTokenReq('refresh_token',{refresh_token:RS.s.refresh_token}))}catch(e){sbSave(null);render();throw e}
+}
+async function sbLogin(idv,pw){
+  var email=idv.indexOf('@')>-1?idv.toLowerCase():digits(idv)+'@admin.menu';
+  sbSave(await sbTokenReq('password',{email:email,password:pw}));
+  var a=await sbf('/rest/v1/admins?select=user_id');
+  if(!a||!a.length){sbSave(null);throw new Error('notadmin')}
+}
+async function sbLogout(){try{if(RS.s)await fetch(SBU+'/auth/v1/logout',{method:'POST',headers:sbHead()})}catch(e){}sbSave(null)}
+
+/* ---------- remote menu + orders ---------- */
+function mapOrder(r){return {id:r.number,rid:r.id,t:Date.parse(r.created_at),name:r.customer_name,phone:r.customer_phone||'',items:r.items||[],total:Number(r.total),status:r.status==='new'?'pending':r.status,note:r.note||'',method:r.method,payRef:r.pay_ref,paidAmount:r.paid_amount==null?null:Number(r.paid_amount),paidBy:r.paid_by,proof:r.proof_path,payId:r.payment_id}}
+function menuFull(){return {info:S.info,theme:S.theme,cats:S.cats,extras:S.extras,offers:S.offers,products:S.products}}
+function applyRemoteMenu(d){
+  if(!d||!d.products)return;
+  S.info=d.info||S.info;S.theme=d.theme||S.theme;S.cats=d.cats||[];S.extras=d.extras||[];S.offers=d.offers||[];S.products=d.products||[];
+  S.info.pay=S.info.pay||{vodafone:'',instapay:'',cash:true};
+  lsSet(KEY,JSON.stringify(Object.assign({},S,{orders:[],payments:[]})));
+  var typing=document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)&&document.activeElement.id!=='q';
+  if(typing||(ui.modal&&ui.modal.kind==='form'))return;
+  render();if(ui.modal&&ui.modal.kind!=='pay')drawModal();
+}
+async function remoteLoadMenu(force){
+  var meta=await sbf('/rest/v1/menu_state?id=eq.1&select=updated_at');
+  if(!meta||!meta.length){RM.empty=true;return}
+  RM.empty=false;
+  if(!force&&meta[0].updated_at===RM.ver)return;
+  if(pushRT)return;
+  var r=await sbf('/rest/v1/menu_state?id=eq.1&select=data,updated_at');
+  RM.ver=r[0].updated_at;applyRemoteMenu(r[0].data);
+}
+function remotePush(){
+  if(!REMOTE||!authed())return;
+  clearTimeout(pushRT);
+  pushRT=setTimeout(async function(){
+    try{await sbEnsure();var r=await sbf('/rest/v1/menu_state?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:{id:1,data:menuFull(),updated_at:new Date().toISOString()}});RM.ver=r&&r[0]&&r[0].updated_at;RM.empty=false}
+    catch(e){toast(L('تعذر حفظ التعديلات على السيرفر','Could not save changes to the server'))}
+    pushRT=null;
+  },500);
+}
+function beep(){try{var c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.08;o.start();setTimeout(function(){o.stop();c.close()},180)}catch(e){}}
+async function remoteAdminRefresh(){
+  if(!REMOTE||!authed())return;
+  await sbEnsure();
+  var rows=await sbf('/rest/v1/orders?select=*&order=created_at.desc&limit=200');
+  var orders=rows.map(mapOrder).reverse(),tab=route().tab,extra='';
+  if(tab==='payments'){
+    RM.payments=await sbf('/rest/v1/payments?select=*&order=received_at.desc&limit=100');
+    RM.devices=await sbf('/rest/v1/devices?select=id,name,last_seen,active');
+    extra=JSON.stringify([RM.payments,RM.devices]);
+  }
+  var paid={};orders.forEach(function(o){if(o.status==='paid'&&o.paidBy==='auto')paid[o.rid]=1});
+  if(RM.paid){Object.keys(paid).forEach(function(k){if(!RM.paid[k]){var o=orders.filter(function(x){return x.rid===k})[0];toast(L('اتأكد دفع الطلب #','Payment confirmed for order #')+o.id);beep()}})}
+  RM.paid=paid;
+  var newOrder=RM.sigN!=null&&orders.length>RM.sigN;RM.sigN=orders.length;if(newOrder){toast(L('طلب جديد وصل','New order received'));beep()}
+  var sig=JSON.stringify(orders)+extra;
+  if(sig===RM.sig)return;RM.sig=sig;S.orders=orders;
+  var typing=document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if(!typing&&!(ui.modal&&ui.modal.kind==='form')&&route().k==='admin')render();
+}
+async function remoteTick(){
+  if(document.hidden)return;tickN++;
+  try{
+    if(authed()&&route().k==='admin'){await remoteAdminRefresh();await remoteLoadMenu(false)}
+    else if(tickN%3===0)await remoteLoadMenu(false);
+  }catch(e){}
+}
+async function remoteInit(){
+  try{await remoteLoadMenu(true)}catch(e){toast(L('تعذر الاتصال بالسيرفر','Could not reach the server'))}
+  var my=getMy();
+  if(my&&my.rid){try{var r=await sbrpc('get_order',{p_order:my.rid,p_token:my.tok});my.status=r.status;setMy(my);render()}catch(e){if(e.status===400||/not_found/.test(e.message)){setMy(null);render()}}}
+  if(authed()){try{await sbEnsure();remoteAdminRefresh()}catch(e){}}
+  setInterval(remoteTick,5000);
+}
+async function remoteSetStatus(o,s){
+  try{await sbEnsure();await sbf('/rest/v1/orders?id=eq.'+o.rid,{method:'PATCH',body:{status:s,updated_at:new Date().toISOString()}});o.status=s;render()}
+  catch(e){toast(L('تعذر تحديث حالة الطلب','Could not update order status'))}
+}
+
+/* ---------- receipt image (resize + optional OCR hint) ---------- */
+function shrinkImage(file,max,q,done){
+  if(!file||!/^image\//.test(file.type)){toast(L('اختار ملف صورة','Choose an image file'));return}
+  var r=new FileReader();r.onerror=function(){toast(L('تعذر قراءة الملف','Could not read file'))};
+  r.onload=function(){var im=new Image();im.onerror=function(){toast(L('الصورة تالفة','Image is corrupt'))};
+    im.onload=function(){var k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      c.toBlob(function(b){done(b,c.toDataURL('image/jpeg',.6))},'image/jpeg',q)};im.src=r.result};
+  r.readAsDataURL(file);
+}
+var ocrP=null;
+function loadOcr(){
+  if(window.Tesseract)return Promise.resolve();
+  if(ocrP)return ocrP;
+  ocrP=new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=res;s.onerror=function(){ocrP=null;rej(new Error('ocr'))};document.head.appendChild(s)});
+  return ocrP;
+}
+function pickRefFromText(text){
+  var t=ascii(text),c=[],m,re=/\d[\d ]{6,26}\d/g;
+  while((m=re.exec(t))){var d=m[0].replace(/ /g,'');if(d.length>=8&&d.length<=20&&!(d.length===11&&d.indexOf('01')===0))c.push({d:d,i:m.index})}
+  if(!c.length)return '';
+  var kw=/(رقم العملي|المرجع|transaction|reference|ref|trx)/i;
+  for(var i=0;i<c.length;i++){var pre=t.slice(Math.max(0,c[i].i-30),c[i].i);if(kw.test(pre))return c[i].d}
+  c.sort(function(a,b){return b.d.length-a.d.length});return c[0].d;
+}
+async function ocrRun(blob,m){
+  m.ocr={state:'run'};drawModal();
+  try{await loadOcr();var res=await window.Tesseract.recognize(blob,'eng');var ref=pickRefFromText(res.data.text||'');m.ocr=ref?{state:'ok',ref:ref}:{state:'none'}}
+  catch(e){m.ocr={state:'fail'}}
+  if(ui.modal===m)drawModal();
+}
+async function uploadReceipt(blob){
+  var path=Date.now()+'-'+uid()+'.jpg';
+  var r=await fetch(SBU+'/storage/v1/object/receipts/'+path,{method:'POST',headers:{apikey:CFG.supabaseAnonKey,Authorization:sbHead().Authorization||'','Content-Type':'image/jpeg'},body:blob});
+  if(!r.ok)throw new Error('upload');
+  return path;
+}
+
+/* ---------- pay modal ---------- */
+function payOpen(o){ui.modal={kind:'pay',o:o,ref:'',err:'',busy:false,sent:false};drawModal();startPayPoll()}
+function payDest(o){var p=S.info.pay||{};return o.method==='vodafone_cash'?p.vodafone:p.instapay}
+function payBody(){
+  var m=ui.modal,o=m.o,st=o.status,hd='<div class="hd"><h2>'+L('الدفع للطلب #','Pay for order #')+o.id+'</h2><button class="iconbtn" data-a="close" aria-label="'+L('إغلاق','Close')+'">'+ic('x')+'</button></div>';
+  if(['paid','preparing','done'].indexOf(st)>-1)return hd+'<div class="bd" style="text-align:center;gap:8px;padding:28px 20px"><div style="font-size:48px">✅</div><h2>'+L('تم تأكيد الدفع','Payment confirmed')+'</h2><p style="margin:0">'+L('طلبك #','Your order #')+'<b class="num">'+o.id+'</b>'+L(' اتأكد وهيتحضّر دلوقتي.',' is confirmed and being prepared.')+'</p><button class="btn pri" data-a="close" style="margin-top:12px;align-self:center">'+L('رجوع للمنيو','Back to menu')+'</button></div>';
+  if(st==='cancelled')return hd+'<div class="bd"><p>'+L('الطلب ده اتلغى.','This order was cancelled.')+'</p></div>';
+  var dest=payDest(o),dv=esc(dest||''),lbl=o.method==='vodafone_cash'?L('رقم محفظة فودافون كاش','Vodafone Cash wallet number'):L('عنوان إنستاباي','InstaPay address');
+  var h=hd+'<div class="bd">'+
+   '<div class="paybox"><div class="copyrow"><span>'+L('المبلغ المطلوب','Amount to pay')+'</span><b class="num" style="font-size:22px">'+money(o.total)+'</b></div>'+
+   (dest?'<div class="copyrow"><span>'+lbl+'<br><b class="num" dir="ltr">'+dv+'</b></span><button class="btn sm" data-a="copyval" data-v="'+dv+'">'+ic('copy')+L('نسخ','Copy')+'</button></div>':'<p class="err">'+L('رقم الاستلام غير مضبوط. كلّم المطعم.','The receiving number is not set. Contact the restaurant.')+'</p>')+'</div>'+
+   '<ol class="stepsl"><li>'+L('حوّل المبلغ بالظبط على الرقم ده من '+methodLabel(o.method)+'.','Transfer the exact amount to this number using '+methodLabel(o.method)+'.')+'</li><li>'+L('انسخ رقم العملية من رسالة التحويل واكتبه تحت.','Copy the transaction number from the transfer message and enter it below.')+'</li><li>'+L('تقدر ترفع صورة الإيصال لو حابب (اختياري).','You may upload the receipt image (optional).')+'</li></ol>';
+  if(m.sent){
+    h+='<div class="paybox" aria-live="polite"><div class="copyrow"><span>'+L('حالة الدفع','Payment status')+'</span>'+statusPill(st)+'</div><p class="note" style="margin:0">'+(st==='review'?L('استلمنا تحويل لكن محتاج مراجعة (المبلغ أقل من المطلوب أو غير واضح). المطعم هيتواصل معاك.','We received a transfer but it needs review (amount lower than required or unclear). The restaurant will contact you.'):L('مستنيين وصول التحويل. أول ما يوصل هيتأكد تلقائي من غير ما تعمل حاجة.','Waiting for the transfer to arrive. It is confirmed automatically as soon as it does.'))+'</p></div>'+
+     '<button class="btn" data-a="payedit">'+L('تعديل رقم العملية','Edit transaction number')+'</button>';
+  }else{
+    h+='<label class="fld">'+L('رقم العملية','Transaction number')+'<input class="in num" id="p_ref" dir="ltr" inputmode="numeric" autocomplete="off" data-a-input="pref" value="'+esc(m.ref||'')+'"></label>'+
+     '<div class="rcpt" data-a="rcpick" tabindex="0" role="button">'+(m.thumb?'<img alt="" src="'+esc(m.thumb)+'">':'<span class="hi" style="display:grid;place-items:center;width:56px;height:56px">'+ic('upload')+'</span>')+'<div>'+(m.thumb?L('تم اختيار صورة الإيصال','Receipt image selected'):L('ارفع صورة الإيصال (اختياري)','Upload receipt image (optional)'))+'<div class="note">'+L('الصورة للمراجعة فقط. التأكيد بيتم برقم العملية.','The image is for review only. Confirmation uses the transaction number.')+'</div></div></div><input type="file" id="rcf" accept="image/*" hidden>'+
+     (m.ocr?(m.ocr.state==='run'?'<p class="note">'+L('بنقرأ الصورة…','Reading the image…')+'</p>':m.ocr.state==='ok'?'<p class="note">'+L('قرأنا من الصورة الرقم ','We read this number from the image: ')+'<b class="num" dir="ltr">'+esc(m.ocr.ref)+'</b> <button class="btn sm" data-a="useocr">'+L('استخدمه','Use it')+'</button> '+L('راجعه قبل الإرسال.','Check it before sending.')+'</p>':'<p class="note">'+L('مقدرناش نقرأ رقم من الصورة. اكتبه بإيديك.','Could not read a number from the image. Type it in.')+'</p>'):'')+
+     '<p class="err" role="alert">'+esc(m.err||'')+'</p><button class="btn pri" data-a="paysend"'+((m.busy||!dest)?' disabled':'')+'>'+(m.busy?L('جاري الإرسال…','Sending…'):L('تأكيد التحويل','Confirm transfer'))+'</button>';
+  }
+  return h+'</div>';
+}
+async function paySend(){
+  var m=ui.modal;if(!m||m.busy)return;
+  var inp=$('#p_ref');if(inp)m.ref=inp.value;
+  var ref=(m.ref||'').trim(),n=digits(ref);
+  if(n.length<6||n.length>20){m.err=L('اكتب رقم العملية كما في رسالة التحويل (٦ أرقام على الأقل).','Enter the transaction number as in the transfer message (at least 6 digits).');drawModal();return}
+  m.busy=true;m.err='';drawModal();
+  try{
+    if(REMOTE){
+      var proof=null;
+      if(m.blob){try{proof=await uploadReceipt(m.blob)}catch(e){toast(L('تعذر رفع الصورة. هنكمّل برقم العملية.','Could not upload the image. Continuing with the transaction number.'))}}
+      var r=await sbrpc('submit_payment',{p_order:m.o.rid,p_token:m.o.tok,p_ref:ref,p_proof:proof});
+      m.o.status=r.status;setMy(m.o);
+    }else{
+      var lo=S.orders.filter(function(x){return x.id===m.o.id})[0];
+      if(!lo)throw new Error('not_found');
+      if(S.orders.some(function(x){return x!==lo&&x.payRefN===n}))throw new Error('ref_used');
+      lo.payRef=ref;lo.payRefN=n;if(m.thumb)lo.proof=m.thumb;
+      reconcileLocal(lo);save();updateOrderDb(lo);m.o.status=lo.status;setMy(lo);
+    }
+    m.sent=true;
+  }catch(e){m.err=errText(e)}
+  m.busy=false;if(ui.modal===m)drawModal();render();
+}
+var payT=null;
+function startPayPoll(){clearInterval(payT);payT=setInterval(payTick,3500)}
+async function payTick(){
+  var m=ui.modal;if(!m||m.kind!=='pay'){clearInterval(payT);return}
+  if(!m.sent)return;
+  try{
+    var st=m.o.status;
+    if(REMOTE){var r=await sbrpc('get_order',{p_order:m.o.rid,p_token:m.o.tok});st=r.status}
+    else{var lo=S.orders.filter(function(x){return x.id===m.o.id})[0];if(lo)st=lo.status}
+    if(st!==m.o.status){m.o.status=st;setMy(m.o);if(ui.modal===m){drawModal();render()}}
+  }catch(e){}
+}
+async function updateOrderDb(o){
+  if(!DB||!USER)return;
+  try{
+    var uid2=o.uid||await USER.id();if(!uid2)return;
+    var ref=DB.doc('orders/'+uid2),snap=await ref.get(),arr=snap.exists?(snap.data().orders||[]):[];
+    var i=arr.findIndex(function(x){return x.id===o.id});if(i<0)arr.push(o);else arr[i]=o;
+    await ref.set({orders:arr.slice(-30)});
+  }catch(e){}
+}
+
+/* ---------- admin: payments tab ---------- */
+function allPayments(){return REMOTE?RM.payments.map(function(p){return {id:p.id,provider:p.provider,txn:p.txn_id,amount:p.amount==null?null:Number(p.amount),raw:p.raw,t:Date.parse(p.received_at),status:p.status,oid:p.order_id}}):S.payments}
+function orderByPayOid(oid){return S.orders.filter(function(o){return REMOTE?o.rid===oid:o.id===oid})[0]}
+function payStatusPill(s){return '<span class="pill '+({matched:'ok',mismatch:'warn',unmatched:'bad'}[s]||'')+'">'+({matched:L('مطابق','Matched'),mismatch:L('مبلغ غير مطابق','Amount mismatch'),unmatched:L('غير مرتبط بطلب','Not linked')}[s]||s)+'</span>'}
+function adminPayments(){
+  var list=allPayments(),open=S.orders.filter(function(o){return ['awaiting_payment','review'].indexOf(o.status)>-1});
+  var dev='';
+  if(REMOTE){
+    dev=RM.devices.length?RM.devices.map(function(d){var on=d.last_seen&&Date.now()-Date.parse(d.last_seen)<35*60000;return '<div class="lr"><div class="g"><b>'+esc(d.name)+'</b><small class="num">'+(d.last_seen?new Date(d.last_seen).toLocaleString(lang==='ar'?'ar-EG':'en-GB'):L('لم يتصل بعد','Never connected'))+'</small></div><span class="pill '+(on?'ok':'bad')+'">'+(on?L('متصل','Online'):L('غير متصل','Offline'))+'</span></div>'}).join(''):'<div class="empty" style="margin:16px">'+L('مفيش جهاز مسجّل. شوف README لتسجيل تطبيق الأندرويد.','No device registered. See the README to register the Android app.')+'</div>';
+  }
+  return head(L('المدفوعات','Payments'),L('التحويلات اللي وصلت على موبايلك من تطبيق الأندرويد.','Transfers received on your phone via the Android app.'))+
+  (REMOTE?'<div class="panel"><h3 class="ph3">'+L('تطبيق الأندرويد','Android app')+'</h3>'+dev+'</div>':
+   '<div class="panel simbox" style="padding:16px;display:grid;gap:10px"><h3 style="margin:0">'+L('محاكي رسالة التحويل (وضع تجريبي)','Transfer SMS simulator (demo mode)')+'</h3><p class="note" style="margin:0">'+L('مفيش سيرفر متوصل، فالتطبيق مش هيبعت حاجة هنا. الصق نص رسالة تحويل وشوف إزاي الطلب بيتأكد. صيغة المثال من تأليفي، ورسائلك الحقيقية ممكن تختلف.','No server is connected, so the app cannot send anything here. Paste a transfer message to see how orders get confirmed. The sample format is invented; your real messages may differ.')+'</p>'+
+   '<textarea class="in" id="simtxt" placeholder="'+L('الصق نص الرسالة هنا','Paste the message text here')+'"></textarea><div class="acts2"><button class="btn pri" data-a="simsms">'+L('استقبال الرسالة','Receive message')+'</button><button class="btn" data-a="simfill">'+L('مثال','Sample')+'</button></div>'+(ui.simRes?'<p class="note" style="margin:0">'+ui.simRes+'</p>':'')+'</div>')+
+  '<div class="panel" style="margin-top:16px"><h3 class="ph3">'+L('التحويلات المستلمة','Received transfers')+'</h3>'+(list.length?list.map(function(p){
+    var o=p.oid?orderByPayOid(p.oid):null;
+    var link=(!p.oid&&open.length)?'<select class="in" id="plk_'+esc(p.id)+'" style="max-width:190px">'+open.map(function(x){return '<option value="'+esc(REMOTE?x.rid:x.id)+'">#'+x.id+' · '+esc(x.name)+' · '+money(x.total)+'</option>'}).join('')+'</select><button class="btn sm" data-a="plink" data-id="'+esc(p.id)+'">'+L('ربط','Link')+'</button>':'';
+    return '<div class="lr" style="flex-wrap:wrap"><div class="g"><b class="num">'+(p.amount!=null?money(p.amount):L('مبلغ غير مقروء','Amount unreadable'))+'</b><small>'+({vodafone_cash:'Vodafone Cash',instapay:'InstaPay',other:L('أخرى','Other')}[p.provider]||p.provider)+(p.txn?' · <span class="num" dir="ltr">'+esc(p.txn)+'</span>':'')+' · '+new Date(p.t).toLocaleString(lang==='ar'?'ar-EG':'en-GB',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})+(o?' · #'+o.id:'')+'</small></div>'+payStatusPill(p.status)+link+'</div>'}).join(''):'<div class="empty" style="margin:16px">'+L('لسه مفيش تحويلات وصلت.','No transfers received yet.')+'</div>')+'</div>';
+}
+function waLink(o){
+  var ph=digits(o.phone||'');if(!ph)return '';
+  if(ph.indexOf('00')===0)ph=ph.slice(2);else if(ph.indexOf('0')===0)ph='20'+ph.slice(1);
+  var msg=lang==='ar'?('مرحبًا '+o.name+'، '+(['paid','preparing','done'].indexOf(o.status)>-1?'تم تأكيد دفع طلبك رقم #'+o.id+' بمبلغ '+o.total+' ج.م وجاري تحضيره. شكرًا لك.':'استلمنا طلبك رقم #'+o.id+' بمبلغ '+o.total+' ج.م.')):('Hi '+o.name+', '+(['paid','preparing','done'].indexOf(o.status)>-1?'payment for your order #'+o.id+' ('+o.total+' EGP) is confirmed and it is being prepared. Thank you.':'we received your order #'+o.id+' ('+o.total+' EGP).'));
+  return '<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/'+ph+'?text='+encodeURIComponent(msg)+'">'+ic('phone')+L('واتساب للعميل','WhatsApp customer')+'</a>';
+}
+function payInfoHTML(o){
+  if(!o.method)return '';
+  var s='<div class="kv"><span class="pill">'+methodLabel(o.method)+'</span>';
+  if(o.payRef)s+='<span>'+L('رقم العملية','Txn')+': <b class="num" dir="ltr">'+esc(o.payRef)+'</b></span>';
+  if(o.paidAmount!=null)s+='<span>'+L('المستلم','Received')+': <b class="num">'+money(o.paidAmount)+'</b></span>';
+  if(o.paidBy)s+='<span class="pill ok">'+(o.paidBy==='auto'?L('تأكد تلقائيًا','Auto-verified'):L('تأكيد يدوي','Manual'))+'</span>';
+  if(o.proof)s+='<button class="btn sm" data-a="proof" data-id="'+o.id+'">'+L('عرض الإيصال','View receipt')+'</button>';
+  s+=waLink(o)+'</div>';
+  if(o.status==='review'&&o.paidAmount!=null&&o.paidAmount<o.total)s+='<div class="note" style="color:var(--warn)">'+L('المبلغ المستلم أقل من المطلوب. راجع قبل التأكيد.','Received amount is lower than required. Check before confirming.')+'</div>';
+  return s;
+}
+
+/* ---------- admin login (nothing is pre-filled or hinted) ---------- */
+function credStored(){try{return JSON.parse(lsGet('rdm-cred','null'))}catch(e){return null}}
+function b64(u){return btoa(String.fromCharCode.apply(null,Array.prototype.slice.call(u)))}
+function unb64(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
+function normId(s){s=String(s||'').trim().toLowerCase();return s.indexOf('@')>-1?s:digits(s)}
+async function pbk(txt,salt){
+  if(!(window.crypto&&crypto.subtle))throw new Error('nocrypto');
+  var k=await crypto.subtle.importKey('raw',new TextEncoder().encode(txt),'PBKDF2',false,['deriveBits']);
+  return b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:salt,iterations:150000},k,256)));
+}
+async function localSetup(idv,pw){var salt=crypto.getRandomValues(new Uint8Array(16));lsSet('rdm-cred',JSON.stringify({s:b64(salt),i:await pbk('id:'+normId(idv),salt),p:await pbk('pw:'+pw,salt)}))}
+async function localVerify(idv,pw){var c=credStored();if(!c)return false;var salt=unb64(c.s);var a=await pbk('id:'+normId(idv),salt),b=await pbk('pw:'+pw,salt);return a===c.i&&b===c.p}
 function renderLogin(msg){
-  app.innerHTML='<div class="wrap"><header class="top"><a class="btn sm" href="#menu">'+ic('ext')+L('رجوع للمنيو','Back to menu')+'</a><div class="acts"><button class="iconbtn" data-a="lang" aria-label="Language">'+ic('globe')+'</button><button class="iconbtn" data-a="dark" aria-label="Theme">'+ic(isDark()?'sun':'moon')+'</button></div></header>'+
-  '<form class="login" id="lf" novalidate><h1>'+L('دخول لوحة التحكم','Dashboard sign in')+'</h1>'+
-  (msg?'<p class="err" role="alert">'+msg+'</p>':'')+
-  '<label class="fld">'+L('البريد الإلكتروني','Email')+'<input class="in" id="l_email" type="email" value="admin@restaurant.demo" autocomplete="username"></label>'+
-  '<label class="fld">'+L('كلمة المرور','Password')+'<input class="in" id="l_pass" type="password" autocomplete="current-password"></label>'+
-  '<p class="err" id="lerr" role="alert"></p><button class="btn pri" type="submit">'+L('دخول','Sign in')+'</button>'+
-  '<p class="note">'+L('نسخة تجريبية: كلمة المرور admin123. الحماية هنا على مستوى المتصفح فقط وليست بديلًا عن خادم حقيقي.','Demo: password is admin123. Protection here is browser-side only and not a substitute for a real server.')+'</p></form></div>';
+  var setup=!REMOTE&&!credStored();
+  var top='<div class="wrap"><header class="top"><a class="btn sm" href="#menu">'+ic('ext')+L('رجوع للمنيو','Back to menu')+'</a><div class="acts"><button class="iconbtn" data-a="lang" aria-label="Language">'+ic('globe')+'</button><button class="iconbtn" data-a="dark" aria-label="Theme">'+ic(isDark()?'sun':'moon')+'</button></div></header>';
+  if(setup){
+    app.innerHTML=top+'<form class="login" id="sf" novalidate autocomplete="off"><h1>'+L('إعداد دخول لوحة التحكم','Set up dashboard sign-in')+'</h1><p class="note">'+L('أول مرة هنا. اختار رقم موبايل أو بريد وكلمة مرور. هيتخزّنوا مشفّرين في المتصفح ده بس.','First time here. Choose a phone number or email and a password. They are stored hashed in this browser only.')+'</p>'+
+    '<label class="fld">'+L('رقم الموبايل أو البريد الإلكتروني','Phone number or email')+'<input class="in" id="s_id" dir="ltr" autocomplete="off"></label>'+
+    '<label class="fld">'+L('كلمة المرور (٨ أحرف على الأقل)','Password (at least 8 characters)')+'<input class="in" id="s_pw" type="password" autocomplete="new-password"></label>'+
+    '<label class="fld">'+L('أعد كتابة كلمة المرور','Repeat the password')+'<input class="in" id="s_pw2" type="password" autocomplete="new-password"></label>'+
+    '<p class="err" id="lerr" role="alert"></p><button class="btn pri" type="submit" id="lbtn">'+L('حفظ ودخول','Save and sign in')+'</button>'+
+    '<p class="note">'+L('الحماية هنا على مستوى المتصفح فقط. للحماية الحقيقية على مستوى السيرفر شغّل وضع Supabase (انظر README).','Protection here is browser-side only. For real server-side protection enable Supabase mode (see the README).')+'</p></form></div>';
+    return;
+  }
+  app.innerHTML=top+'<form class="login" id="lf" novalidate><h1>'+L('دخول لوحة التحكم','Dashboard sign in')+'</h1>'+(msg?'<p class="err" role="alert">'+msg+'</p>':'')+
+   '<label class="fld">'+L('رقم الموبايل أو البريد الإلكتروني','Phone number or email')+'<input class="in" id="l_id" dir="ltr" autocomplete="username"></label>'+
+   '<label class="fld">'+L('كلمة المرور','Password')+'<input class="in" id="l_pass" type="password" autocomplete="current-password"></label>'+
+   '<p class="err" id="lerr" role="alert"></p><button class="btn pri" type="submit" id="lbtn">'+L('دخول','Sign in')+'</button></form></div>';
 }
-function doLogin(){
-  var now=Date.now();
-  if(now<ui.lockUntil){$('#lerr').textContent=L('محاولات كتير. جرّب بعد ','Too many attempts. Try again in ')+Math.ceil((ui.lockUntil-now)/1000)+L(' ثانية',' s');return}
-  var em=$('#l_email').value.trim().toLowerCase(),pw=$('#l_pass').value;
-  if(em==='admin@restaurant.demo'&&pw==='admin123'){ssSet('rdm-auth','1');ui.fails=0;location.hash='#admin';render();return}
-  ui.fails++;if(ui.fails>=5){ui.lockUntil=now+30000;ui.fails=0}
-  $('#lerr').textContent=L('البريد أو كلمة المرور غير صحيحة','Incorrect email or password');
+function afterLogin(){if(REMOTE){if(RM.empty)remotePush();remoteAdminRefresh().catch(function(){})}}
+async function doLogin(){
+  var now=Date.now(),er=$('#lerr');
+  if(now<ui.lockUntil){er.textContent=L('محاولات كتير. جرّب بعد ','Too many attempts. Try again in ')+Math.ceil((ui.lockUntil-now)/1000)+L(' ثانية',' s');return}
+  var idv=$('#l_id').value.trim(),pw=$('#l_pass').value;
+  if(!idv||!pw){er.textContent=L('اكتب البيانات كاملة','Fill in both fields');return}
+  var btn=$('#lbtn');btn.disabled=true;
+  try{
+    if(REMOTE)await sbLogin(idv,pw);else if(!(await localVerify(idv,pw)))throw new Error('bad');
+    ui.fails=0;if(!REMOTE)ssSet('rdm-auth','1');location.hash='#admin';render();afterLogin();return;
+  }catch(e){
+    ui.fails++;if(ui.fails>=5){ui.lockUntil=Date.now()+30000;ui.fails=0}
+    var e2=$('#lerr');if(e2)e2.textContent=e.message==='nocrypto'?L('المتصفح مش بيدعم التشفير هنا. افتح الموقع عبر https أو localhost.','This browser cannot hash here. Open the site over https or localhost.'):L('البيانات غير صحيحة','Incorrect details');
+    var b2=$('#lbtn');if(b2)b2.disabled=false;
+  }
 }
-var TABS=function(){return [['home','grid',L('لوحة التحكم','Dashboard')],['products','box',L('المنتجات','Products')],['categories','tag',L('التصنيفات','Categories')],['extras','list',L('الإضافات','Extras')],['offers','percent',L('العروض','Offers')],['orders','bag',L('الطلبات','Orders')],['info','store',L('بيانات المطعم','Restaurant Information')],['theme','palette',L('تخصيص الشكل','Theme Customization')],['qr','qr','QR Code']]};
+async function doSetup(){
+  var er=$('#lerr'),idv=$('#s_id').value.trim(),pw=$('#s_pw').value,pw2=$('#s_pw2').value;
+  if(!normId(idv)){er.textContent=L('اكتب رقم موبايل أو بريد','Enter a phone number or email');return}
+  if(pw.length<8){er.textContent=L('كلمة المرور أقل من ٨ أحرف','Password is shorter than 8 characters');return}
+  if(pw!==pw2){er.textContent=L('كلمتا المرور غير متطابقتين','Passwords do not match');return}
+  try{await localSetup(idv,pw);ssSet('rdm-auth','1');location.hash='#admin';render()}
+  catch(e){er.textContent=L('المتصفح مش بيدعم التشفير هنا. افتح الموقع عبر https أو localhost.','This browser cannot hash here. Open the site over https or localhost.')}
+}
+
+var TABS=function(){return [['home','grid',L('لوحة التحكم','Dashboard')],['products','box',L('المنتجات','Products')],['categories','tag',L('التصنيفات','Categories')],['extras','list',L('الإضافات','Extras')],['offers','percent',L('العروض','Offers')],['orders','bag',L('الطلبات','Orders')],['payments','wallet',L('المدفوعات','Payments')],['info','store',L('بيانات المطعم','Restaurant Information')],['theme','palette',L('تخصيص الشكل','Theme Customization')],['qr','qr','QR Code']]};
 function renderAdmin(tab){
   var rt=tab||route().tab;
-  var side='<nav class="side" aria-label="'+L('التنقل','Navigation')+'"><div class="t">'+L('لوحة التحكم','Dashboard')+'</div><div class="me"><div class="av">A</div><div><b>'+L('المدير','Administrator')+'</b><small dir="ltr">admin@restaurant.demo</small></div><span class="pill ok">'+ic('shield')+L('جلسة آمنة','Secure session')+'</span></div>'+
+  var side='<nav class="side" aria-label="'+L('التنقل','Navigation')+'"><div class="t">'+L('لوحة التحكم','Dashboard')+'</div><div class="me"><div class="av">A</div><div><b>'+L('المدير','Administrator')+'</b><small>'+L('مدير النظام','Owner')+'</small></div><span class="pill ok">'+ic('shield')+L('جلسة آمنة','Secure session')+'</span></div>'+
    TABS().map(function(t){return '<a class="nav'+(rt===t[0]?' on':'')+'" href="#admin'+(t[0]==='home'?'':'-'+t[0])+'"'+(rt===t[0]?' aria-current="page"':'')+'>'+ic(t[1])+t[2]+(t[0]==='orders'&&pendingCount()?'<span class="bdg num">'+pendingCount()+'</span>':'')+'</a>'}).join('')+
    '<div class="sp"></div><a class="nav" href="#menu">'+ic('ext')+L('الموقع','Website')+'</a><button class="nav" data-a="lang" style="border:0;background:none;text-align:start">'+ic('globe')+(lang==='ar'?'English':'العربية')+'</button><button class="nav" data-a="dark" style="border:0;background:none;text-align:start">'+ic(isDark()?'sun':'moon')+L('الوضع','Theme')+'</button><button class="nav" data-a="logout" style="border:0;background:none;text-align:start;color:var(--bad)">'+ic('out')+L('تسجيل الخروج','Logout')+'</button></nav>';
-  var body={home:adminHome,products:adminProducts,categories:adminCats,extras:adminExtras,offers:adminOffers,orders:adminOrders,info:adminInfo,theme:adminTheme,qr:adminQR}[rt]||adminHome;
+  var body={home:adminHome,products:adminProducts,categories:adminCats,extras:adminExtras,offers:adminOffers,orders:adminOrders,payments:adminPayments,info:adminInfo,theme:adminTheme,qr:adminQR}[rt]||adminHome;
   app.innerHTML='<div class="wrap"><div class="adm">'+side+'<main class="main">'+body()+'</main></div></div>';
   if(rt==='qr')drawQR();
 }
@@ -721,14 +1101,14 @@ function adminOffers(){
   '<div class="panel">'+(S.offers.length?S.offers.map(function(o){return '<div class="lr"><span class="pill acc">'+esc(o.badge)+'</span><div class="g"><b>'+esc(nm(o.title))+'</b><small>'+esc(nm(o.desc))+'</small></div><button class="sw'+(o.active?' on':'')+'" role="switch" aria-checked="'+o.active+'" data-a="oftog" data-id="'+o.id+'" aria-label="'+L('نشط','Active')+'"></button><button class="sbtn" data-a="editoffer" data-id="'+o.id+'" aria-label="'+L('تعديل','Edit')+'">'+ic('edit')+'</button><button class="sbtn bad" data-a="deloffer" data-id="'+o.id+'" aria-label="'+L('حذف','Delete')+'">'+ic('trash')+'</button></div>'}).join(''):'<div class="empty">'+L('لسه مفيش عروض.','No offers yet.')+'</div>')+'</div>';
 }
 function adminOrders(){
-  var fs=['all','pending','preparing','done','cancelled'];
+  var fs=['all','awaiting_payment','review','paid','pending','preparing','done','cancelled'];
   var list=S.orders.slice().reverse().filter(function(o){return ui.ofilter==='all'||o.status===ui.ofilter});
-  return head(L('الطلبات','Orders'),L('الطلبات الواردة من المنيو. بعض الطلبات أمثلة تجريبية.','Orders placed from the menu. A few are sample orders.'))+
+  return head(L('الطلبات','Orders'),REMOTE?L('الطلبات الواردة من المنيو. الدفع بيتأكد تلقائي لما التحويل يوصل.','Orders placed from the menu. Payment is confirmed automatically when the transfer arrives.'):L('الطلبات الواردة من المنيو. بعض الطلبات أمثلة تجريبية.','Orders placed from the menu. A few are sample orders.'))+
   '<div class="tabs">'+fs.map(function(f){return '<button class="chip'+(ui.ofilter===f?' on':'')+'" data-a="ofl" data-id="'+f+'">'+(f==='all'?L('الكل','All'):statusLabel(f))+'</button>'}).join('')+'</div>'+
   (list.length?'<div class="panel">'+list.map(function(o){
     return '<div class="ord"><div class="h"><b class="num">#'+o.id+' · '+esc(o.name)+'</b>'+statusPill(o.status)+'</div><div class="note num">'+new Date(o.t).toLocaleString(lang==='ar'?'ar-EG':'en-GB',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})+'</div>'+
-    '<div>'+o.items.map(function(i){return '<div class="num">'+i.qty+'× '+esc(nm(i.name))+(i.extras&&i.extras.length?' <small style="color:var(--mute)">('+i.extras.map(function(x){return esc(nm(x))}).join('، ')+')</small>':'')+'</div>'}).join('')+'</div>'+(o.note?'<div class="note">'+L('ملاحظة: ','Note: ')+esc(o.note)+'</div>':'')+
-    '<div class="h"><b class="num">'+money(o.total)+'</b><div class="acts2">'+['pending','preparing','done','cancelled'].filter(function(s){return s!==o.status}).map(function(s){return '<button class="btn sm'+(s==='cancelled'?' bad':'')+'" data-a="ost" data-id="'+o.id+'" data-s="'+s+'">'+statusLabel(s)+'</button>'}).join('')+'</div></div></div>'}).join('')+'</div>':'<div class="empty">'+L('مفيش طلبات.','No orders.')+'</div>');
+    payInfoHTML(o)+'<div>'+o.items.map(function(i){return '<div class="num">'+i.qty+'× '+esc(nm(i.name))+(i.extras&&i.extras.length?' <small style="color:var(--mute)">('+i.extras.map(function(x){return esc(nm(x))}).join('، ')+')</small>':'')+'</div>'}).join('')+'</div>'+(o.note?'<div class="note">'+L('ملاحظة: ','Note: ')+esc(o.note)+'</div>':'')+
+    '<div class="h"><b class="num">'+money(o.total)+'</b><div class="acts2">'+(['awaiting_payment','review','pending'].indexOf(o.status)>-1?'<button class="btn sm pri" data-a="ocf" data-id="'+o.id+'">'+L('تأكيد الدفع يدويًا','Confirm payment manually')+'</button>':'')+['preparing','done','cancelled'].filter(function(s){return s!==o.status}).map(function(s){return '<button class="btn sm'+(s==='cancelled'?' bad':'')+'" data-a="ost" data-id="'+o.id+'" data-s="'+s+'">'+statusLabel(s)+'</button>'}).join('')+'</div></div></div>'}).join('')+'</div>':'<div class="empty">'+L('مفيش طلبات.','No orders.')+'</div>');
 }
 function adminInfo(){
   var i=S.info;
@@ -738,6 +1118,7 @@ function adminInfo(){
   '<label class="fld">'+L('رقم الهاتف','Phone')+'<input class="in" id="i_ph" dir="ltr" value="'+esc(i.phone)+'"></label>'+
   '<div class="row2"><label class="fld">'+L('العنوان (عربي)','Address (Arabic)')+'<input class="in" id="i_aa" value="'+esc(i.address.ar)+'"></label><label class="fld">'+L('العنوان (إنجليزي)','Address (English)')+'<input class="in" id="i_ae" dir="ltr" value="'+esc(i.address.en)+'"></label></div>'+
   '<div class="row2"><label class="fld">'+L('مواعيد العمل (عربي)','Hours (Arabic)')+'<input class="in" id="i_ha" value="'+esc(i.hours.ar)+'"></label><label class="fld">'+L('مواعيد العمل (إنجليزي)','Hours (English)')+'<input class="in" id="i_he" dir="ltr" value="'+esc(i.hours.en)+'"></label></div>'+
+  '<h3 style="margin:8px 0 0">'+L('استلام الدفع','Receiving payments')+'</h3><p class="note" style="margin:0">'+L('الأرقام دي بتظهر للعميل في صفحة الدفع. سيب الخانة فاضية لو مش عايز الطريقة دي.','These details are shown to customers on the payment screen. Leave a field empty to disable that method.')+'</p><div class="row2"><label class="fld">'+L('رقم محفظة فودافون كاش','Vodafone Cash wallet number')+'<input class="in" id="i_vf" dir="ltr" inputmode="tel" autocomplete="off" value="'+esc((i.pay||{}).vodafone||'')+'"></label><label class="fld">'+L('عنوان أو رقم إنستاباي','InstaPay address or number')+'<input class="in" id="i_ip" dir="ltr" autocomplete="off" value="'+esc((i.pay||{}).instapay||'')+'"></label></div><label class="chk"><input type="checkbox" id="i_cash"'+((i.pay||{}).cash!==false?' checked':'')+'>'+L('الدفع عند الاستلام','Pay on delivery')+'</label>'+
   '<label class="chk"><input type="checkbox" id="i_open"'+(i.open?' checked':'')+'>'+L('المطعم مفتوح ويستقبل طلبات','Open and accepting orders')+'</label><p class="err" id="ierr" role="alert"></p><div><button class="btn pri" type="submit">'+L('حفظ التغييرات','Save changes')+'</button></div></form>';
 }
 function adminTheme(){
@@ -840,7 +1221,29 @@ var A={
  cq:function(el){var it=ui.cart[+el.dataset.i];if(!it)return;it.qty=Math.max(1,Math.min(20,it.qty+Number(el.dataset.d)));saveCart();keepCartFields();drawModal();render()},
  crm:function(el){ui.cart.splice(+el.dataset.i,1);saveCart();keepCartFields();drawModal();render()},
  submit:submitOrder,
- logout:function(){ssSet('rdm-auth',null);location.hash='#menu';render()},
+ logout:function(){if(REMOTE)sbLogout();ssSet('rdm-auth',null);location.hash='#menu';render()},
+ pm:function(el){var m=ui.modal;if(!m||m.kind!=='cart')return;keepCartFields();m.method=el.dataset.id;drawModal()},
+ paymy:function(){var my=getMy();if(!my)return;var o=REMOTE?my:S.orders.filter(function(x){return x.id===my.id})[0];if(o)payOpen(o)},
+ paysend:paySend,
+ payedit:function(){var m=ui.modal;if(m){m.sent=false;drawModal()}},
+ copyval:function(el){var v=el.dataset.v;try{navigator.clipboard.writeText(v).then(function(){toast(L('تم النسخ','Copied'))},function(){toast(v)})}catch(e){toast(v)}},
+ rcpick:function(){var f=$('#rcf');if(f)f.click()},
+ useocr:function(){var m=ui.modal;if(m&&m.ocr&&m.ocr.ref){m.ref=m.ocr.ref;drawModal()}},
+ ocf:function(el){var o=S.orders.filter(function(x){return x.id===Number(el.dataset.id)})[0];if(!o)return;
+   if(REMOTE){sbEnsure().then(function(){return sbrpc('admin_confirm',{p_order:o.rid})}).then(function(){o.status='paid';o.paidBy='manual';render();remoteAdminRefresh()}).catch(function(){toast(L('تعذر التأكيد','Could not confirm'))});return}
+   o.status='paid';o.paidBy='manual';o.paidAt=Date.now();save();render();updateOrderDb(o);setOrderStatusDb(o)},
+ proof:function(el){var o=S.orders.filter(function(x){return x.id===Number(el.dataset.id)})[0];if(!o||!o.proof)return;
+   if(!REMOTE){ui.modal={kind:'img',src:o.proof};drawModal();return}
+   ui.modal={kind:'img',src:null};drawModal();
+   sbEnsure().then(function(){return sbf('/storage/v1/object/sign/receipts/'+o.proof,{method:'POST',body:{expiresIn:300}})}).then(function(r){if(ui.modal&&ui.modal.kind==='img'){ui.modal.src=SBU+'/storage/v1'+r.signedURL;drawModal()}}).catch(function(){closeModal();toast(L('تعذر تحميل الصورة','Could not load the image'))})},
+ simsms:function(){var t=$('#simtxt');if(!t||!t.value.trim())return;var r=ingestLocal(t.value);
+   ui.simRes=r.ok?(L('اتسجّل تحويل: ','Recorded: ')+(r.p.amount!=null?money(r.p.amount):L('مبلغ غير مقروء','amount unreadable'))+' · '+L('رقم العملية ','txn ')+(r.p.txn||'—')+' · '+statusLabel(r.rec.status==='matched'?'paid':r.rec.status==='mismatch'?'review':'awaiting_payment')):(r.why==='duplicate'?L('الرسالة دي اتسجّلت قبل كده.','This message was already recorded.'):L('الرسالة دي تحويل صادر. اتجاهلت.','This is an outgoing transfer. Ignored.'));
+   t.value='';render()},
+ simfill:function(){var t=$('#simtxt');if(t)t.value='تم استلام مبلغ 150.00 جنيه من 01000000000 رقم العملية: 4455667788'},
+ plink:function(el){var id=el.dataset.id,sel=$('#plk_'+id);if(!sel)return;
+   if(REMOTE){sbEnsure().then(function(){return sbrpc('admin_match',{p_payment:id,p_order:sel.value})}).then(function(){toast(L('تم الربط','Linked'));remoteAdminRefresh()}).catch(function(){toast(L('تعذر الربط','Could not link'))});return}
+   var p=S.payments.filter(function(x){return x.id===id})[0],o=S.orders.filter(function(x){return x.id===Number(sel.value)})[0];if(!p||!o)return;
+   p.status='matched';p.oid=o.id;o.status='paid';o.paidBy='manual';o.paidAmount=p.amount;o.paidAt=Date.now();save();render();updateOrderDb(o);setOrderStatusDb(o)},
  acat:function(el){ui.acat=el.dataset.id;renderAdmin()},
  ofl:function(el){ui.ofilter=el.dataset.id;renderAdmin()},
  newprod:function(){prodForm()},editprod:function(el){prodForm(el.dataset.id)},
@@ -856,14 +1259,14 @@ var A={
  newoffer:function(){offerForm()},editoffer:function(el){offerForm(el.dataset.id)},
  oftog:function(el){var o=S.offers.filter(function(x){return x.id===el.dataset.id})[0];if(o){o.active=!o.active;save();render()}},
  deloffer:function(el){S.offers=S.offers.filter(function(x){return x.id!==el.dataset.id});save();render()},
- ost:function(el){var o=S.orders.filter(function(x){return x.id===Number(el.dataset.id)})[0];if(o){o.status=el.dataset.s;save();render();setOrderStatusDb(o)}},
+ ost:function(el){var o=S.orders.filter(function(x){return x.id===Number(el.dataset.id)})[0];if(!o)return;if(REMOTE){remoteSetStatus(o,el.dataset.s);return}o.status=el.dataset.s;save();render();setOrderStatusDb(o)},
  accent:function(el){S.theme.accent=el.dataset.c;save();render()},
  layout:function(el){S.theme.layout=el.dataset.id;save();render()},
  copyurl:function(){var u=menuURL(),i=$('#qrurl');try{navigator.clipboard.writeText(u).then(function(){toast(L('تم نسخ الرابط','Link copied'))},function(){i.select();toast(L('حدد الرابط وانسخه','Select and copy the link'))})}catch(e){i.select()}},
  pick:function(){var f=$('#imgf');if(f)f.click()},
  clrimg:function(){ui.draftImg=null;var m=ui.modal;toast(L('هتتشال الصورة عند الحفظ','Image will be removed on save'));var e=$('#dzimg');if(e)e.src='data:image/gif;base64,R0lGODlhAQABAAAAACw='}
 };
-function keepCartFields(){var n=$('#c_name'),t=$('#c_note');if(ui.modal&&ui.modal.kind==='cart'){if(n)ui.modal.name=n.value;if(t)ui.modal.note=t.value}}
+function keepCartFields(){var n=$('#c_name'),t=$('#c_note'),ph=$('#c_phone');if(ui.modal&&ui.modal.kind==='cart'){if(n)ui.modal.name=n.value;if(t)ui.modal.note=t.value;if(ph)ui.modal.phone=ph.value}}
 document.addEventListener('click',function(e){
   var sc=e.target.closest&&e.target.closest('[data-scrim]');if(sc&&e.target===sc){closeModal();return}
   var el=e.target.closest&&e.target.closest('[data-a]');if(!el)return;
@@ -882,6 +1285,8 @@ document.addEventListener('input',function(e){
   if(t.id==='q'){ui.q=t.value;renderGrid();return}
   if(t.dataset.aInput==='cname'&&ui.modal)ui.modal.name=t.value;
   if(t.dataset.aInput==='cnote'&&ui.modal)ui.modal.note=t.value;
+  if(t.dataset.aInput==='cphone'&&ui.modal)ui.modal.phone=t.value;
+  if(t.dataset.aInput==='pref'&&ui.modal)ui.modal.ref=t.value;
   if(t.id==='accin'){S.theme.accent=t.value;document.documentElement.style.setProperty('--accent',t.value)}
 });
 document.addEventListener('change',function(e){
@@ -889,15 +1294,17 @@ document.addEventListener('change',function(e){
   if(t.id==='accin'){save();render();return}
   if(t.dataset.aChange==='price'){var p=prod(t.dataset.id),v=Number(t.value);if(!p)return;if(t.value===''||isNaN(v)||v<0){t.value=p.price;toast(L('السعر غير صحيح','Invalid price'));return}p.price=v;save();toast(L('تم تحديث السعر','Price updated'));return}
   if(t.id==='imgf'&&t.files&&t.files[0])readImage(t.files[0],setDraftImg);
+  if(t.id==='rcf'&&t.files&&t.files[0]&&ui.modal&&ui.modal.kind==='pay'){var pm=ui.modal;shrinkImage(t.files[0],1280,.8,function(b,th){pm.blob=b;pm.thumb=th;pm.ocr=null;if(ui.modal===pm){drawModal();if(!REMOTE||true)ocrRun(b,pm)}})}
 });
 document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.aChange==='price'){e.preventDefault();e.target.blur()}});
 document.addEventListener('submit',function(e){
   var f=e.target;
   if(f.id==='mf'){e.preventDefault();submitForm()}
   else if(f.id==='lf'){e.preventDefault();doLogin()}
+  else if(f.id==='sf'){e.preventDefault();doSetup()}
   else if(f.id==='infof'){e.preventDefault();var v=function(i){return $('#'+i).value.trim()};
     if(!v('i_na')){$('#ierr').textContent=L('اكتب اسم المطعم بالعربي','Enter the Arabic name');return}
-    S.info={name:{ar:v('i_na'),en:v('i_ne')||v('i_na')},tagline:{ar:v('i_ta'),en:v('i_te')||v('i_ta')},phone:v('i_ph'),address:{ar:v('i_aa'),en:v('i_ae')||v('i_aa')},hours:{ar:v('i_ha'),en:v('i_he')||v('i_ha')},open:$('#i_open').checked};
+    S.info={name:{ar:v('i_na'),en:v('i_ne')||v('i_na')},tagline:{ar:v('i_ta'),en:v('i_te')||v('i_ta')},phone:v('i_ph'),address:{ar:v('i_aa'),en:v('i_ae')||v('i_aa')},hours:{ar:v('i_ha'),en:v('i_he')||v('i_ha')},open:$('#i_open').checked,pay:{vodafone:v('i_vf'),instapay:v('i_ip'),cash:$('#i_cash').checked}};
     save();render();toast(L('تم حفظ البيانات','Saved'))}
 });
 document.addEventListener('dragstart',function(e){var r=e.target.closest&&e.target.closest('.prow');if(!r)return;ui.drag=r.dataset.id;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',ui.drag)}catch(x){}r.classList.add('dragging')});
@@ -971,7 +1378,7 @@ async function sendOrderDb(o){
 }
 async function setOrderStatusDb(o){
   if(!DB||!o.uid)return;
-  try{var arr=(dbR.orderDocs[o.uid]||[]).map(function(x){return x.id===o.id?Object.assign({},x,{status:o.status}):x});await DB.doc('orders/'+o.uid).set({orders:arr})}
+  try{var arr=(dbR.orderDocs[o.uid]||[]).map(function(x){return x.id===o.id?Object.assign({},x,o):x});await DB.doc('orders/'+o.uid).set({orders:arr})}
   catch(e){toast(L('تعذر تحديث حالة الطلب','Could not update order status'))}
 }
 async function initDb(){
@@ -984,7 +1391,7 @@ async function initDb(){
   }catch(e){}
 }
 
-load();render();initDb();
+load();render();initDb();if(REMOTE)remoteInit();
 })();
 </script>
 
